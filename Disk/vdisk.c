@@ -7,6 +7,8 @@
 #include <strings.h>
 #include <string.h>
 
+#include "../LLFS.h"
+
 const int BLOCK_SIZE = 512;
 const int NUM_BLOCKS = 4096;
 const char DISKNAME[12] = "virtualDisk";
@@ -20,7 +22,7 @@ void writeBlock(FILE* disk, int blockNum, char* data){
 	fwrite(data, BLOCK_SIZE, 1, disk); //will overwrite exisitng data
 }
 
-int main (int argc, char *argv[]){
+void createDisk(){
 	int ret, i, n;
 	int fd;
 	char buf[BLOCK_SIZE];
@@ -47,5 +49,4 @@ int main (int argc, char *argv[]){
 
 	printf("created virtual disk= %s of size= %d\n", DISKNAME, BLOCK_SIZE*NUM_BLOCKS);
 
-	return(0);
 }

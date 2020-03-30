@@ -4,6 +4,7 @@
 int main(){
 	initLLFS();
 	formatDisk();
-	readB(1);
+	createFile("jim");
+	createFile("sam");	
 	return(0);
 }

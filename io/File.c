@@ -23,21 +23,21 @@ void initLLFS(){
 void formatDisk(){
 	//SUPERBLOCK
 	char* buffer;
-	FILE* disk = fopen(VDISK_PATH, "r+");
+	FILE* disk = fopen(VDISK_PATH, "r+b");
 	buffer = (char *)malloc(BLOCK_SIZE);
-	int magic = 42;
+	int magic = 16;
 	int blocks = NUM_BLOCKS;
 	int inodes = NUM_INODES;
-	memcpy(buffer, &magic, sizeof(magic));
-	memcpy(buffer + sizeof(int) *1, &blocks, sizeof(int));
-	memcpy(buffer + sizeof(int) *2, &inodes, sizeof(int));
-	writeBlock(disk, 0, buffer);
+	memset(buffer, 0, BLOCK_SIZE);
+	memcpy(buffer, &magic, 4);
+	memcpy(buffer + 4, &blocks, 4);
+	memcpy(buffer + 8, &inodes, 4);
+	writeBlock(disk, 0,0, buffer);
 
 	//FREE VECTOR BLOCK
 	memset(buffer, 1, BLOCK_SIZE);
 	memset(buffer, 0, 10);
-	printf("%s\n", buffer);
-	writeBlock(disk, 1, buffer);
+	writeBlock(disk, 1,0, buffer);
 	free(buffer);
 	fclose(disk);
 
@@ -49,18 +49,32 @@ void readB(int blockNum, char *buff){
 	fclose(disk);
 }
 
-void writeB(int blockNum, char *buff){
+void writeB(int blockNum, int offset, char *buff){
 	FILE *disk = fopen(VDISK_PATH, "r+");
-	writeBlock(disk, blockNum, buff);
+	writeBlock(disk, blockNum, offset, buff);
 	fclose(disk);
 }
 
 //creates a file with given file name
 //Returns 0 for succesfull, 1 for error
 int createFile(char *filename){
-	int blockNum = findOpenBlock();
-	printf("found open block %d \n", blockNum);		
+	findOpenBlock(0);
+		
 
+	return(0);
+}
+
+int writeToFile(char *filePath, char *contents){
+	
+
+
+
+
+}
+
+int createDir(char *dirName){
+	findOpenBlock(0);
+	int entries[16];
 
 	return(0);
 }
@@ -68,22 +82,47 @@ int createFile(char *filename){
 //returns an int to an available block
 //returns value of open block (>10)
 //if no block found returns 1
-int findOpenBlock(){
+int findOpenBlock(int fileType){
+
 	char *buffer;
 	int i = 0;
 	buffer = (char *)malloc(BLOCK_SIZE);
 	readB(1, buffer);
-	while(buffer[i] != 1){
-		printf("index: %d, value: %d \n", i, buffer[i]);
-		if( i == BLOCK_SIZE){
-			printf("no open block found\n");
-			return(1);
+	if(fileType == 0){//if file type is flat file
+		while(buffer[i] != 1){
+			if( i == BLOCK_SIZE){
+				printf("no open block found\n");
+				return(1);
+			}
+			i++;
 		}
-		i++;
+	}else{//if looking for a block for an inode
+		i = NUM_BLOCKS;
+		while(buffer[i] != 1){
+			if( i == BLOCK_SIZE-128){
+				printf("no open block found\n");
+				return(1);
+			}
+			i--;
+		}
 	}
+
+
 	free(buffer);
 	markBlockTaken(i);
 	return (i);
+}
+
+int createInode(int fileSize, int fileType){
+	char *buffer = malloc(32);
+	memset(buffer, 0, 32);
+	memcpy(buffer, &fileSize, 4);
+	memcpy(buffer + 4, &fileType, 4);
+	int blockNum = findOpenBlock(fileType);
+	writeB(blockNum, 0, buffer);
+	free(buffer);
+	return(0);	
+
 }
 
 void markBlockTaken(int blockNum){
@@ -91,8 +130,7 @@ void markBlockTaken(int blockNum){
 	buffer = (char *)malloc(BLOCK_SIZE);
 	readB(1, buffer);
 	buffer[blockNum] = 0;
-	writeB(1, buffer);
-	printf("free vector index: %d, marked taken\n", blockNum);
+	writeB(1, 0, buffer);
 	free(buffer);	
 
 }

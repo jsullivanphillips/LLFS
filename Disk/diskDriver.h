@@ -13,39 +13,28 @@ const int NUM_BLOCKS = 4096;
 const char DISKNAME[12] = "vdisk";
 void readBlock(FILE* disk, int blockNum, char* buffer){
 	fseek(disk, blockNum * BLOCK_SIZE, SEEK_SET);
-	int objectsRead = fread(buffer, BLOCK_SIZE, 1, disk);
-	printf("# of objects read: %d\n",objectsRead);
+	fread(buffer, BLOCK_SIZE, 1, disk);
 }
 
-void writeBlock(FILE* disk, int blockNum, char* data){
-	fseek(disk, blockNum * BLOCK_SIZE, SEEK_SET);
+void writeBlock(FILE* disk, int blockNum, int offset, char* data){
+	fseek(disk, (blockNum * BLOCK_SIZE)+offset, SEEK_SET);
 	fwrite(data, BLOCK_SIZE, 1, disk); //will overwrite exisitng data
 }
 
 void createDisk(){
-	int ret, i, n;
-	char buf[BLOCK_SIZE];
-	int fd;
-
-	ret = open(DISKNAME, O_CREAT | O_RDWR, 0666);
-
-	if(ret == -1){
-		printf("could not create disk\n");
-		exit(1);
+	int i;
+	char *buffer = malloc(BLOCK_SIZE);
+	FILE* disk = fopen(DISKNAME, "w");
+	memset(buffer, 0, BLOCK_SIZE);
+	for(i = 0; i < NUM_BLOCKS; i++){
+		fwrite(buffer, BLOCK_SIZE, 1, disk);
+		fseek(disk, i * BLOCK_SIZE, SEEK_SET);
 	}
-	bzero((void*)buf, BLOCK_SIZE);//writing 0's in to the buffer
-
-	fd = open(DISKNAME, O_RDWR);
-
-	for(i = 0; i < NUM_BLOCKS; ++i){
-		n = write(fd, buf, BLOCK_SIZE);
-		if( n!= BLOCK_SIZE){
-			printf("write error\n");
-			exit(1);
-		}
-	}
-	close(fd);	
+	
+	printf("value of i: %d\n", i);
+	fclose(disk);
+	free(buffer);	
 
 
-	printf("created virtual disk= %s of size= %d\n", DISKNAME, BLOCK_SIZE*NUM_BLOCKS);
+	printf("created virtual disk %s of size= %d\n", DISKNAME, BLOCK_SIZE*NUM_BLOCKS);
 }

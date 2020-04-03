@@ -34,7 +34,7 @@ void createDisk(){
 	printf("value of i: %d\n", i);
 	fclose(disk);
 	free(buffer);	
-
-
 	printf("created virtual disk %s of size= %d\n", DISKNAME, BLOCK_SIZE*NUM_BLOCKS);
 }
+
+

@@ -17,7 +17,7 @@ int createDir(char *dirName);
 
 int findOpenBlock(int fileType);
 
-int createInode(int fileSize, int fileType);
+int createInode(int fileSize, int fileType, int blockNum);
 
 int writeToFile(char *filePath, char *contents);
 

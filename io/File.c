@@ -24,7 +24,7 @@ void formatDisk(){
 	//SUPERBLOCK
 	char* buffer;
 	FILE* disk = fopen(VDISK_PATH, "r+b");
-	buffer = (char *)malloc(BLOCK_SIZE);
+	buffer = malloc(BLOCK_SIZE);
 	int magic = 16;
 	int blocks = NUM_BLOCKS;
 	int inodes = NUM_INODES;
@@ -35,11 +35,11 @@ void formatDisk(){
 	writeBlock(disk, 0,0, buffer);
 
 	//FREE VECTOR BLOCK
-	memset(buffer, 1, BLOCK_SIZE);
-	memset(buffer, 0, 10);
+	memset(buffer, 256, BLOCK_SIZE);	
 	writeBlock(disk, 1,0, buffer);
 	free(buffer);
 	fclose(disk);
+	createDir("root");
 
 }
 
@@ -68,15 +68,20 @@ int writeToFile(char *filePath, char *contents){
 	
 
 
-
+	return 0;
 
 }
 
 int createDir(char *dirName){
-	findOpenBlock(0);
-	int entries[16];
+	char *buffer = malloc(BLOCK_SIZE);
 
+	findOpenBlock(0);
+	int blockNum = findOpenBlock(0);
+	int inodeIndex = createInode(512, 1, blockNum);
+	memcpy(buffer, &inodeIndex, 1);
+	memcpy(buffer+1, &dirName, 31);
 	return(0);
+	free(buffer);
 }
 
 //returns an int to an available block
@@ -99,6 +104,7 @@ int findOpenBlock(int fileType){
 	}else{//if looking for a block for an inode
 		i = NUM_BLOCKS;
 		while(buffer[i] != 1){
+			printf("index: %d: %d\n", i, buffer[i]);
 			if( i == BLOCK_SIZE-128){
 				printf("no open block found\n");
 				return(1);
@@ -113,15 +119,16 @@ int findOpenBlock(int fileType){
 	return (i);
 }
 
-int createInode(int fileSize, int fileType){
+int createInode(int fileSize, int fileType, int blockNum){
 	char *buffer = malloc(32);
 	memset(buffer, 0, 32);
 	memcpy(buffer, &fileSize, 4);
 	memcpy(buffer + 4, &fileType, 4);
-	int blockNum = findOpenBlock(fileType);
-	writeB(blockNum, 0, buffer);
+	memcpy(buffer + 8, &blockNum, 2);
+	int inodeBlockNum = findOpenBlock(1);
+	writeB(inodeBlockNum, 0, buffer);
 	free(buffer);
-	return(0);	
+	return(inodeBlockNum);	
 
 }
 

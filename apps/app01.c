@@ -4,8 +4,10 @@
 int main(){
 	initLLFS();
 	formatDisk();
-	createFile("jimbo");	
-	
+	printFreeBlock();
+	findOpenBlock();
+	markBlockTaken(20);
+	printFreeBlock();
 
 
 	return(0);

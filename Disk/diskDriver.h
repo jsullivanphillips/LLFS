@@ -16,10 +16,24 @@ void readBlock(FILE* disk, int blockNum, char* buffer){
 	fread(buffer, BLOCK_SIZE, 1, disk);
 }
 
-void writeBlock(FILE* disk, int blockNum, int offset, char* data){
-	fseek(disk, (blockNum * BLOCK_SIZE)+offset, SEEK_SET);
+void writeBlock(FILE* disk, int blockNum, char* data){
+	fseek(disk, (blockNum * BLOCK_SIZE), SEEK_SET);
 	fwrite(data, BLOCK_SIZE, 1, disk); //will overwrite exisitng data
 }
+
+void readBlockB(FILE* disk, int blockNum, unsigned char* buffer){
+	fseek(disk, blockNum * BLOCK_SIZE, SEEK_SET);
+	fread(buffer, BLOCK_SIZE, 1, disk);
+}
+
+
+void writeBlockB(FILE* disk, int blockNum, unsigned char* data){
+	fseek(disk, (blockNum * BLOCK_SIZE), SEEK_SET);
+	fwrite(data, BLOCK_SIZE, 1, disk); //will overwrite exisitng data
+}
+
+
+
 
 void createDisk(){
 	int i;
@@ -31,7 +45,6 @@ void createDisk(){
 		fseek(disk, i * BLOCK_SIZE, SEEK_SET);
 	}
 	
-	printf("value of i: %d\n", i);
 	fclose(disk);
 	free(buffer);	
 	printf("created virtual disk %s of size= %d\n", DISKNAME, BLOCK_SIZE*NUM_BLOCKS);

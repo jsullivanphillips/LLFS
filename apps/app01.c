@@ -3,10 +3,6 @@
 
 int main(){
 	initLLFS();
-	findOpenBlock();
-	findOpenBlock();
-	findOpenBlock();
-	findOpenBlock();
-	updateFreeBlock();	
+	clean();	
 	return(0);
 }

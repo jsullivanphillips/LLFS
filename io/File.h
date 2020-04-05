@@ -7,6 +7,14 @@ void createDisk();
 
 void formatDisk();
 
+unsigned char create_inode(int blockNum);
+
+void pushLog();
+
+void writeLog(int blockNum, unsigned char *buffer);
+
+void clean();
+
 int findOpenBlock();
 
 void updateFreeBlock();

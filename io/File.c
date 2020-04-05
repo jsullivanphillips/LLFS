@@ -34,7 +34,8 @@ char SELF_DIR[31] = ".\0";
 char *LOG;
 int logQuantity;
 int logLocations[MAX_LOG_BLOCKS];
-
+//FILE
+int cur_file_inode;
 
 
 
@@ -74,6 +75,35 @@ int spaceInCurDir(){
 	return j;
 }
 
+void openFile(char *fileName){
+	if(existsInDir(fileName) != -1){
+		printf("opening %s \n", fileName);
+		cur_file_inode = existsInDir(fileName);
+	}else{
+		printf("creating %s \n", fileName);
+		int m = findOpenBlock();
+		int inode_val = create_inode(m);
+		addToCurrDir(fileName, inode_val);
+		cur_file_inode = inode_val;
+		char *buffer = malloc(BLOCK_SIZE);
+		memset(buffer, 0, BLOCK_SIZE);
+		writeLog(m, buffer);
+		free(buffer);
+	}
+
+
+}
+
+int existsInDir(char *fileName){
+	for(int i =0; i <16; i++){
+		if(entry_inode[i] != 0){
+			if(strcmp(fileName, entry_name[i]) == 0){
+				return(entry_inode[i]);
+			}
+		}
+	}
+	return -1;
+}
 
 
 void addToCurrDir(char *dirName, int inode_val){
@@ -92,6 +122,7 @@ void addToCurrDir(char *dirName, int inode_val){
 	num_of_obsolete++;
 	cur_dir_block = findOpenBlock();
 	writeLog(cur_dir_block, buffer);
+	free(buffer);
 }
 
 void makeDir(char *dirName){
@@ -104,6 +135,7 @@ void makeDir(char *dirName){
 		memcpy(dir, &inode_val, 1);
 		memcpy(dir+1, &SELF_DIR, 31);
 		writeLog(m, dir);
+		free(dir);
 	}else{
 		printf("no space in %s, please rm to make room for new directory\n", cur_dir_name);
 	}

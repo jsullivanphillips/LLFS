@@ -13,6 +13,10 @@ void makeDir(char *dirName);
 
 void addToCurrDir(char *dirName, int inode_val);
 
+void openFile(char *fileName);
+
+int existsInDir(char *fileName);
+
 void markBlockFree(int blockNum);
 
 int spaceInCurDir();

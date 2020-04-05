@@ -6,6 +6,8 @@ int main(){
 	makeDir("jhn");
 	makeDir("poopy");
 	makeDir("nun");
+	openFile("bob");
+	openFile("bob");
 	clean();	
 	return(0);
 }

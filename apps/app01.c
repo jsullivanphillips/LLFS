@@ -3,6 +3,9 @@
 
 int main(){
 	initLLFS();
+	makeDir("jhn");
+	makeDir("poopy");
+	makeDir("nun");
 	clean();	
 	return(0);
 }

@@ -7,11 +7,21 @@ void createDisk();
 
 void formatDisk();
 
-unsigned char create_inode(int blockNum);
+int create_inode(int blockNum);
+
+void makeDir(char *dirName);
+
+void addToCurrDir(char *dirName, int inode_val);
+
+void markBlockFree(int blockNum);
+
+int spaceInCurDir();
 
 void pushLog();
 
-void writeLog(int blockNum, unsigned char *buffer);
+void writeLog(int blockNum, char *buffer);
+
+void cd(char *dir);
 
 void clean();
 

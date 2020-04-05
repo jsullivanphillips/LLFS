@@ -74,15 +74,15 @@ int spaceInCurDir(){
 	return j;
 }
 
+
+
 void addToCurrDir(char *dirName, int inode_val){
 	int index = 16 - spaceInCurDir();
-	printf("%d index for %s\n", index, dirName);
 	strcpy(entry_name[index], dirName);
 	entry_inode[index] = inode_val;
 	char *buffer = malloc(BLOCK_SIZE);
 	for(int i = 0; i < 16; i ++){
 		if(entry_inode[i] != 0){
-			printf("adding %s to %s \n", entry_name[i], cur_dir_name);
 			memcpy(buffer + (i * 32), &entry_inode[i], 1);
 			memcpy(buffer + (i * 32) + 1, &entry_name[i], 31);
 		}
@@ -90,16 +90,13 @@ void addToCurrDir(char *dirName, int inode_val){
 	//mark old block free in vector
 	obsolete_blocks[num_of_obsolete] = cur_dir_block;
 	num_of_obsolete++;
-	printf("finding new block for %s \n", cur_dir_name);
 	cur_dir_block = findOpenBlock();
 	writeLog(cur_dir_block, buffer);
 }
 
 void makeDir(char *dirName){
 	if(spaceInCurDir()){
-		printf("finding block for %s \n", dirName);
 		int m = findOpenBlock();
-		printf("finding block for inode for %s \n", dirName);
 		int inode_val = create_inode(m);
 		addToCurrDir(dirName, inode_val);
 		char *dir = malloc(BLOCK_SIZE);
@@ -154,7 +151,7 @@ void createDisk(){
 
 	fclose(disk);
 	free(buffer);
-	printf("created disk of %dkb\n", (BLOCK_SIZE * NUM_BLOCKS)/1000);
+	printf("created disk of %dMb\n", (BLOCK_SIZE * NUM_BLOCKS)/1000000);
 		
 }
 
@@ -185,7 +182,7 @@ void formatDisk(){
 	//setting up local cur_dir vars
 	cur_dir_block = findOpenBlock();
 	strcpy(cur_dir_name,"/\0");
-	strcpy(entry_name[0], cur_dir_name);
+	strcpy(entry_name[0], SELF_DIR);
 	entry_inode[0] = create_inode(cur_dir_block);
 
 	memcpy(buffer, &entry_inode[0], 1);
@@ -210,7 +207,6 @@ void markBlockFree(int blockNum){
 int findOpenBlock(){
 	for(int i = 0; i < NUM_BLOCKS; i++){
 		if(bitMap[i] == 1){
-			printf("block %d found open\n", i);
 			bitMap[i] = 0;
 			int index = i / 8;
 			int bit_index = i % 8;

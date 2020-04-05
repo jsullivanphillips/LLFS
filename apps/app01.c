@@ -3,8 +3,10 @@
 
 int main(){
 	initLLFS();
-	formatDisk();
 	findOpenBlock();
-	clean();
+	findOpenBlock();
+	findOpenBlock();
+	findOpenBlock();
+	updateFreeBlock();	
 	return(0);
 }

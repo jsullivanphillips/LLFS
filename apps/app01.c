@@ -4,11 +4,7 @@
 int main(){
 	initLLFS();
 	formatDisk();
-	printFreeBlock();
 	findOpenBlock();
-	markBlockTaken(20);
-	printFreeBlock();
-
-
+	clean();
 	return(0);
 }

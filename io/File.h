@@ -15,6 +15,16 @@ void addToCurrDir(char *dirName, int inode_val);
 
 void openFile(char *fileName);
 
+void write_file(char *contents);
+
+void get_cur_file_size();
+
+void get_cur_file_blocks();
+
+void updateDir(char *fileName, int blockNum);
+
+int update_inode(int cur_file_inode, int blocks[], int size_of_contents);
+
 int existsInDir(char *fileName);
 
 void markBlockFree(int blockNum);

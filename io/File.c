@@ -13,7 +13,7 @@
 #define NUM_BLOCKS 4096
 #define NUM_INODES 128
 #define MAGIC_NUM 42
-#define MAX_LOG_BLOCKS 2
+#define MAX_LOG_BLOCKS 5
 //GLOBAL VARS
 //BITMAP
 char bitMap[NUM_BLOCKS];
@@ -36,8 +36,9 @@ int logQuantity;
 int logLocations[MAX_LOG_BLOCKS];
 //FILE
 int cur_file_inode;
-
-
+char cur_file_name[31];
+int cur_file_size;
+int cur_file_blocks[10];
 
 void writeLog(int blockNum,  char* buffer){
 	memcpy(LOG + (logQuantity * BLOCK_SIZE), buffer, BLOCK_SIZE);
@@ -55,6 +56,7 @@ void pushLog(){
 	updateFreeBlock();
 	FILE *disk = fopen(VDISK_PATH, "rb+");
 	char* buffer = malloc(BLOCK_SIZE);
+	memset(buffer, 0, BLOCK_SIZE);
 	for(int i = 0; i < logQuantity; i++){
 		memcpy(buffer, &LOG[i * BLOCK_SIZE], BLOCK_SIZE);
 		writeBlock(disk, logLocations[i], buffer);
@@ -75,23 +77,123 @@ int spaceInCurDir(){
 	return j;
 }
 
+
+//update INODES so that they include more information (new inode call called update inode)
+//create fn to write to a file
+//change directory 
+//delete directory 
+//delete file
 void openFile(char *fileName){
 	if(existsInDir(fileName) != -1){
-		printf("opening %s \n", fileName);
 		cur_file_inode = existsInDir(fileName);
+		strncpy(cur_file_name, fileName, 31);
+		get_cur_file_size();
+		get_cur_file_blocks();
 	}else{
-		printf("creating %s \n", fileName);
 		int m = findOpenBlock();
 		int inode_val = create_inode(m);
 		addToCurrDir(fileName, inode_val);
 		cur_file_inode = inode_val;
+		cur_file_size = 0;
+		get_cur_file_blocks();
+		strncpy(cur_file_name, fileName, 31);
 		char *buffer = malloc(BLOCK_SIZE);
 		memset(buffer, 0, BLOCK_SIZE);
 		writeLog(m, buffer);
 		free(buffer);
 	}
+}
+
+void get_cur_file_size(){
+	FILE *disk = fopen(VDISK_PATH, "rb+");
+	char *buffer = malloc(BLOCK_SIZE);
+	readBlock(disk, cur_file_inode, buffer);
+	memcpy(&cur_file_size, buffer, 4);
+	printf("file size for %s is %d", cur_file_name, cur_file_size);
+
+	fclose(disk);
+	free(buffer);
+}
+
+void get_cur_file_blocks(){
+	FILE *disk = fopen(VDISK_PATH, "rb+");
+	char *buffer = malloc(BLOCK_SIZE);
+	readBlock(disk, cur_file_inode, buffer);
+	for(int i = 0; i <10; i++){
+		memcpy(&cur_file_blocks[i], buffer + 8 + (i * 2), 2);
+	}
+
+	fclose(disk);
+	free(buffer);
+}
+
+void write_file(char *contents){
+	int num_old_blocks, num_new_blocks, total_blocks, j;
+	if(cur_file_size == 0){
+		num_old_blocks = 0;
+	}else{
+		num_old_blocks = (cur_file_size/BLOCK_SIZE) +1;
+	}
+	num_new_blocks = (strlen(contents) / BLOCK_SIZE)+1;
+	
 
 
+
+	char *buffer = malloc(BLOCK_SIZE);	
+	memset(buffer, 0, BLOCK_SIZE);
+	total_blocks = num_new_blocks + num_old_blocks;
+	j = 0;
+	for(int i = num_old_blocks; i < total_blocks; i++){
+		cur_file_blocks[i] = findOpenBlock();
+		memcpy(buffer, contents + ( j * BLOCK_SIZE ), BLOCK_SIZE);
+		memset(buffer + strlen(contents), 0, BLOCK_SIZE - strlen(contents));
+		writeLog(cur_file_blocks[i], buffer);
+		j++;
+	}
+	for(int i = total_blocks; i < 10; i++){
+		cur_file_blocks[i] = 0;
+	}	
+	
+	free(buffer);
+	cur_file_size = strlen(contents) + cur_file_size;
+	cur_file_inode = update_inode(cur_file_inode, cur_file_blocks, cur_file_size);
+	updateDir(cur_file_name, cur_file_inode);
+
+	
+
+}
+
+
+
+
+
+
+int update_inode(int cur_file_inode, int blocks[], int size_of_contents){
+	char *buffer = malloc(BLOCK_SIZE);
+	memset(buffer, 0, BLOCK_SIZE);
+	memcpy(buffer, &size_of_contents, 4);
+	memset(buffer + 4, 0, 4);
+	for(int i = 0; i < 10; i++){
+		memcpy(buffer + 8 + (i * 2), &blocks[i], 2);
+	}
+	obsolete_blocks[num_of_obsolete] = cur_file_inode;
+	num_of_obsolete++;
+	
+	int updated_inode_block = findOpenBlock();
+	writeLog(updated_inode_block, buffer);
+	free(buffer);
+	return updated_inode_block;
+
+}
+
+void updateDir(char *fileName, int blockNum){
+	for(int i = 0; i < 16; i++){
+		if(entry_inode[i] != 0){
+			if(strcmp(fileName, entry_name[i]) == 0){
+				entry_inode[i] = blockNum;
+			}
+		}
+	}
 }
 
 int existsInDir(char *fileName){
@@ -111,6 +213,7 @@ void addToCurrDir(char *dirName, int inode_val){
 	strcpy(entry_name[index], dirName);
 	entry_inode[index] = inode_val;
 	char *buffer = malloc(BLOCK_SIZE);
+	memset(buffer, 0, BLOCK_SIZE);
 	for(int i = 0; i < 16; i ++){
 		if(entry_inode[i] != 0){
 			memcpy(buffer + (i * 32), &entry_inode[i], 1);
@@ -152,6 +255,7 @@ int create_inode(int blockNum){
 	num_rem_inodes--;
 
 	char *inode = malloc(BLOCK_SIZE);
+	memset(inode, 0, BLOCK_SIZE);
 	memset(inode, 0, 32);
 	memcpy(inode + 8, &blockNum, 2);
 	writeLog(m, inode);
@@ -160,13 +264,15 @@ int create_inode(int blockNum){
 }
 
 void clean(){
+	pushLog();
 	free(LOG);
 }
 
 void initLLFS(){
 	createDisk();
-	LOG = malloc(BLOCK_SIZE * MAX_LOG_BLOCKS);
+	LOG = calloc(MAX_LOG_BLOCKS, BLOCK_SIZE);
 	logQuantity = 0;
+	memset(entry_inode, 0, 16);
 	formatDisk();
 	printf("finished initializing LLFS.. \n");
 }

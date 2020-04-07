@@ -13,7 +13,7 @@
 #define NUM_BLOCKS 4096
 #define NUM_INODES 128
 #define MAGIC_NUM 42
-#define MAX_LOG_BLOCKS 5
+#define MAX_LOG_BLOCKS 1
 //GLOBAL VARS
 //BITMAP
 char bitMap[NUM_BLOCKS];
@@ -26,10 +26,12 @@ char imap_block[NUM_INODES * 4];
 char num_rem_inodes = NUM_INODES - 1;
 //DIRECTORIES
 char cur_dir_block;
+int cur_dir_inode;
 char entry_name[16][31];
 char entry_inode[16];
 char cur_dir_name[31];
 char SELF_DIR[31] = ".\0";
+char PREV_DIR[31] = "..\0";
 //LOG
 char *LOG;
 int logQuantity;
@@ -78,8 +80,6 @@ int spaceInCurDir(){
 }
 
 
-//update INODES so that they include more information (new inode call called update inode)
-//create fn to write to a file
 //change directory 
 //delete directory 
 //delete file
@@ -109,15 +109,16 @@ void get_cur_file_size(){
 	char *buffer = malloc(BLOCK_SIZE);
 	readBlock(disk, cur_file_inode, buffer);
 	memcpy(&cur_file_size, buffer, 4);
-	printf("file size for %s is %d", cur_file_name, cur_file_size);
 
 	fclose(disk);
 	free(buffer);
 }
 
 void get_cur_file_blocks(){
+	pushLog();
 	FILE *disk = fopen(VDISK_PATH, "rb+");
 	char *buffer = malloc(BLOCK_SIZE);
+	memset(buffer, 0, BLOCK_SIZE);
 	readBlock(disk, cur_file_inode, buffer);
 	for(int i = 0; i <10; i++){
 		memcpy(&cur_file_blocks[i], buffer + 8 + (i * 2), 2);
@@ -126,6 +127,36 @@ void get_cur_file_blocks(){
 	fclose(disk);
 	free(buffer);
 }
+
+
+
+void cd(char* dirName){
+
+	int inode_block = existsInDir(dirName);
+	if(inode_block == -1){
+		printf("%s not in current directory \n", dirName);
+		return;
+	}	
+	FILE *disk = fopen(VDISK_PATH, "rb+");
+	char *buffer = malloc(BLOCK_SIZE);
+	memset(buffer, 0, BLOCK_SIZE);
+	readBlock(disk, inode_block, buffer);
+	memcpy(&cur_dir_block, buffer +8, 2);
+	free(buffer);
+
+	char *dir_buffer = malloc(BLOCK_SIZE);
+	memset(dir_buffer, 0, BLOCK_SIZE);
+	readBlock(disk, cur_dir_block, dir_buffer);
+	for(int i =0; i < 16; i++){
+		memcpy(&entry_inode[i], dir_buffer + (i * 32), 1);
+		strncpy(entry_name[i], dir_buffer + (i * 32)+1, 31);
+	}
+	strncpy(cur_dir_name, dirName, 31);	
+	printf("/%s  \n", cur_dir_name);		
+
+
+}
+
 
 void write_file(char *contents){
 	int num_old_blocks, num_new_blocks, total_blocks, j;
@@ -237,6 +268,8 @@ void makeDir(char *dirName){
 		memset(dir, 0, 	BLOCK_SIZE);
 		memcpy(dir, &inode_val, 1);
 		memcpy(dir+1, &SELF_DIR, 31);
+		memcpy(dir+32, &cur_dir_inode, 1);
+		memcpy(dir+33, &PREV_DIR, 31);
 		writeLog(m, dir);
 		free(dir);
 	}else{
@@ -250,9 +283,6 @@ void makeDir(char *dirName){
 
 int create_inode(int blockNum){
 	int m = findOpenBlock();
-	int inode_num = NUM_INODES - num_rem_inodes;
-	imap[inode_num] = m;
-	num_rem_inodes--;
 
 	char *inode = malloc(BLOCK_SIZE);
 	memset(inode, 0, BLOCK_SIZE);
@@ -260,7 +290,7 @@ int create_inode(int blockNum){
 	memcpy(inode + 8, &blockNum, 2);
 	writeLog(m, inode);
 	free(inode);	
-	return inode_num;
+	return m;
 }
 
 void clean(){
@@ -291,7 +321,7 @@ void createDisk(){
 	free(buffer);
 	printf("created disk of %dMb\n", (BLOCK_SIZE * NUM_BLOCKS)/1000000);
 		
-}
+	cur_dir_inode = entry_inode[0];}
 
 void formatDisk(){
 	char* buffer;
@@ -322,7 +352,7 @@ void formatDisk(){
 	strcpy(cur_dir_name,"/\0");
 	strcpy(entry_name[0], SELF_DIR);
 	entry_inode[0] = create_inode(cur_dir_block);
-
+	cur_dir_inode = entry_inode[0];
 	memcpy(buffer, &entry_inode[0], 1);
 	memcpy(buffer+1, &SELF_DIR, 31);
 	writeBlock(disk, cur_dir_block, buffer);

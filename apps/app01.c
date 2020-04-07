@@ -3,10 +3,12 @@
 
 int main(){
 	initLLFS();
-	makeDir("jhn");
-	openFile("bob");
-	write_file("okie doke so this is the deal i am suiper cool and wear the best sunglasses");
-	write_file("i have forty-nine toes");
-	clean();	
+	makeDir("firstFolder");
+	openFile("fileOne");
+	makeDir("secondFolder");
+	write_file("this is a very special file with very special contents!");
+	cd("firstFolder");
+	openFile("secretFile");
+	write_file("this is a secret file with secret contents");
 	return(0);
 }

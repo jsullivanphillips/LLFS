@@ -21,6 +21,9 @@ void get_cur_file_size();
 
 void get_cur_file_blocks();
 
+void cd(char* dirName);
+
+
 void updateDir(char *fileName, int blockNum);
 
 int update_inode(int cur_file_inode, int blocks[], int size_of_contents);

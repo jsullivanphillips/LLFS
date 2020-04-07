@@ -23,6 +23,7 @@ void get_cur_file_blocks();
 
 void cd(char* dirName);
 
+void readFile();
 
 void updateDir(char *fileName, int blockNum);
 

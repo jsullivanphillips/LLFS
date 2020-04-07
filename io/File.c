@@ -195,6 +195,20 @@ void write_file(char *contents){
 }
 
 
+void readFile(){
+	char *buffer = malloc(BLOCK_SIZE);
+	memset(buffer, 0, BLOCK_SIZE);
+	FILE *disk = fopen(VDISK_PATH, "rb+");
+	readBlock(disk, cur_file_blocks[0], buffer);
+	char c[BLOCK_SIZE];
+	strncpy(c, buffer, BLOCK_SIZE);
+	printf("%s \n", c);
+
+}
+
+
+
+
 
 
 

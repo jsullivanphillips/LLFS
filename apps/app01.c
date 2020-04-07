@@ -7,6 +7,7 @@ int main(){
 	openFile("fileOne");
 	makeDir("secondFolder");
 	write_file("this is a very special file with very special contents!");
+	readFile();
 	cd("firstFolder");
 	openFile("secretFile");
 	write_file("this is a secret file with secret contents");
